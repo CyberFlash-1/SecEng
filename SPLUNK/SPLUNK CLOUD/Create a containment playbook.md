@@ -34,6 +34,7 @@ Enter `Disable IAM User for investigation` as the playbook name.
 
 **4. Add the reference ID**
 Paste the investigation reference ID you copied earlier into the search field of the **Data Preview** panel, as before.
+`18d99e2d-7f22-4983-86a5-6f0dc74b4379`
 
 **5. Test with the reference ID**
 Click **Save and Run** to test the playbook using the reference ID.
@@ -86,6 +87,11 @@ Click **Save and Run** to test the complete playbook.
 
 **18. Verify success**
 Navigate back to your investigation and confirm that the success status and message were added to the investigation.
+
+
+<img width="918" height="483" alt="image" src="https://github.com/user-attachments/assets/46e7988d-6b9a-448c-9e4e-64ba9e8fdee9" />
+
+
 
 
 
