@@ -13,3 +13,16 @@ and contain vulnerabilities or threats.
 When a SOAR playbook runs, it can execute actions against one or more external systems, using the asset configurations to establish a connection and
 perform the desired operations. The playbook can then use the results of the actions to drive further automation or orchestration within the SOAR instance.
 In this lab, I will install and explore a SOAR App.
+
+## Task 1: Create an ES Playbook to decode userData
+Let's create an ES playbook to run the actions we took manually during our investigation to decode the userData and add it to a finding or investigation.
+Download the base64decode Input playbook
+You will create an ES playbook that calls the Input playbook. Input playbooks cannot be called directly from Splunk ES as an automation, they are meant to
+be called from Splunk SOAR or ES playbooks.
+1. From the Splunk App containing your lab guide, locate the downloads menu to the right of the lab guide menu.
+2. Select the Downloads page, then locate and download the SOAR Input playbook.
+Copy your investigation reference ID
+Before you start, you need to capture the reference id of your investigation.
+1. In the Analyst queue, find your investigation.
+2. Open the investigation and locate the reference id in the details panel on the right
+3. Copy the investigation's reference id. You will use this to build and test the SOAR playbook.
