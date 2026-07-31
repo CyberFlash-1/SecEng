@@ -1,6 +1,6 @@
 
 
-
+# Responding to Threats with Splunk SOAR
 <p> Splunk SOAR empowers security teams to automate repetitive tasks, orchestrate complex workflows, and accelerate incident response. To explore the power of SOAR, you need to understand the building blocks it uses: apps, assets, and playbooks.</p>
 
 - A SOAR App (also known as a connector) is a Python module that bridges between Splunk SOAR and an external service, enabling Splunk SOAR to execute its operations. Apps implement actions that provide a specific functionality, such as a vulnerability assessment or threat intelligence. Apps arelinked to assets and playbooks in one-to-many relationships.
@@ -34,3 +34,43 @@ In this lab, I will install and explore a SOAR App.
 Navigate to
 Security Content > SOAR Playbooks
 This opens the playbook page on the paired Splunk SOAR server in a new tab. If you see the"Welcome to Splunk SOAR" pop-up window, simply close it.
+
+<img width="1598" height="685" alt="image" src="https://github.com/user-attachments/assets/86999618-17b9-49b8-a59c-1efd6de32363" />
+
+In the pop-up window, select
+Enterprise Security Playbook
+as the playbook type.
+6.Give the new playbook a name:
+```
+Decode base64 userData
+```
+7.
+Paste the investigation reference id you copied earlier into the search field of the Data Preview panel.
+
+<img width="1699" height="1006" alt="image" src="https://github.com/user-attachments/assets/a0fe8b4b-bfde-4c25-be22-fa3b28d91922" />
+
+
+<img width="1693" height="1171" alt="image" src="https://github.com/user-attachments/assets/fa8151ba-bb07-4e55-b60d-13b587ebc2e3" />
+
+12.From theAddmenu on the left, select the Playbook block and drag it to the Start block in the VPE editing area to connect it.
+13. In the configuration panel on the left, select the Input option. You can scroll and locate, or type the playbook name to filter for the "base64decode_Input"playbook.
+14.Select the "base64decode_Input" playbook.
+15.In the configuration for Inputs enter the datapath finding:consolidated_findings.userData.
+16. From the Add menu on the left, select under "Splunk API" the Enterprise Security API (ES API) block. Drag the block to the
+Playbook block in the VPEediting area to connect it.
+
+<img width="1693" height="1171" alt="image" src="https://github.com/user-attachments/assets/05b1bad7-ed1d-486f-8ab9-3417c31cbc9d" />
+
+17. For the action configuration, select the Add finding or investigation note action.
+18. For the configuration of the block, enter the following datapath values: id: finding:id
+- title: Decoded base64 userData
+- content: playbook_base64decode_input_1:playbook_output:decoded_string
+- Note: The exact block name playbook_base64decode_input_1 may vary if you renamed the playbook block in the VPE.
+- 
+<img width="1557" height="1220" alt="image" src="https://github.com/user-attachments/assets/af352b34-5bd9-453e-9487-d45206d69bfa" />
+
+Playbook results after save and run 
+
+<img width="1693" height="1185" alt="image" src="https://github.com/user-attachments/assets/ff42e7b6-6bf2-4789-8ebc-87ed5ba29485" />
+
+
