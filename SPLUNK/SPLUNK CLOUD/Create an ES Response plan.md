@@ -20,7 +20,7 @@ index=edu eventName=RunInstances
 | where NOT match(sourceIPAddress, "192\\.168\\.\\d+\\.\\d+|10\\.\\d+\\.\\d+\\.\\d+|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d+\\.\\d+")
 ```
 
-<img width="1662" height="1153" alt="image" src="https://github.com/user-attachments/assets/51cd12ca-3306-40ac-8e01-79a97bace2fb" />
+<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/51cd12ca-3306-40ac-8e01-79a97bace2fb" />
 
 ## Documenting Network Activity Related to the Incident
 
@@ -40,7 +40,7 @@ index="edu" src_ip IN ("ip address placeholder", "ip address placeholder", "ip a
 | table src_host src_ip src_port dest_ip dest_port mbs
 ```
 
-<img width="1653" height="746" alt="image" src="https://github.com/user-attachments/assets/89be06db-c73e-4dd6-be9b-56dbea57b69e" />
+<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/89be06db-c73e-4dd6-be9b-56dbea57b69e" />
 
 ## Decode EC2 UserData
 
@@ -98,4 +98,3 @@ While the immediate incident is contained, a critical part of incident response 
 
 - **Root Cause Analysis:** Based on your investigation, what is the most likely root cause of this incident? (Hint: How did the attacker gain initial access?)
 - **Preventative Measures:** What steps could RabbitHole Labs take to prevent a similar incident in the future? Consider IAM best practices, network security, and monitoring.
-
