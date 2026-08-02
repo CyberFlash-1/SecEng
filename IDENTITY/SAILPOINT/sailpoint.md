@@ -1,3 +1,5 @@
+[Watch: SailPoint LDAP Setup](https://youtu.be/_3PzurBS2Ok)
+
 # IdentityIQ Installation Guide
 
 ## Step 1: Install Java
@@ -162,3 +164,5 @@
 
 - Replace `<your_database_password>` with your actual MySQL root password.
 - Make sure all services (Tomcat and MySQL) are running before accessing IdentityIQ.
+
+
