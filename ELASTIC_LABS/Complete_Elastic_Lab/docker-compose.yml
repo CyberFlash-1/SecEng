@@ -1,0 +1,135 @@
+services:
+  setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es-setup
+    user: "0"
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+    command: >
+      bash -c '
+        if [ ! -f config/certs/elastic-certificates.p12 ]; then
+          echo "Creating certificates";
+          bin/elasticsearch-certutil ca --silent --out config/certs/ca.p12 --pass "";
+          bin/elasticsearch-certutil cert --silent --ca config/certs/ca.p12 --ca-pass "" --out config/certs/elastic-certificates.p12 --pass "";
+          chmod 755 config/certs;
+          chmod 644 config/certs/*.p12;
+        fi;
+        echo "Waiting for Elasticsearch";
+        until curl -s http://es01:9200 | grep -q "missing authentication credentials"; do sleep 5; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST -u "elastic:$${ELASTIC_PASSWORD}" -H "Content-Type: application/json" http://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"$${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 5; done;
+        echo "All done";
+      '
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f config/certs/elastic-certificates.p12 ]"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es01
+    depends_on:
+      setup:
+        condition: service_healthy
+    environment:
+      - node.name=es01
+      - cluster.name=es-training
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+      - xpack.security.authc.api_key.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
+      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - esdata01:/usr/share/elasticsearch/data
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 10s
+      retries: 30
+
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es02
+    depends_on:
+      setup:
+        condition: service_healthy
+    environment:
+      - node.name=es02
+      - cluster.name=es-training
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+      - xpack.security.authc.api_key.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
+      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - esdata02:/usr/share/elasticsearch/data
+    mem_limit: 1g
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: es03
+    depends_on:
+      setup:
+        condition: service_healthy
+    environment:
+      - node.name=es03
+      - cluster.name=es-training
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+      - xpack.security.authc.api_key.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
+      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - esdata03:/usr/share/elasticsearch/data
+    mem_limit: 1g
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: kib01
+    depends_on:
+      es01:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    environment:
+      - ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200","http://es03:9200"]
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+    ports:
+      - "5601:5601"
+    volumes:
+      - kibdata:/usr/share/kibana/data
+
+volumes:
+  certs:
+  esdata01:
+  esdata02:
+  esdata03:
+  kibdata:
