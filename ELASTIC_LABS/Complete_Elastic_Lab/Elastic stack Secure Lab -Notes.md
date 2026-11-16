@@ -98,3 +98,78 @@ certutil -addstore -f "ROOT" C:\elastic-stack\ca.crt
 Running this command because the browser does not trust the certificate and give a warning. This command add the certificate to the store of Root Trusted Certificate Authorities.
 
 
+
+## FLEET SERVER FIX
+```
+$tokenName = "fleet-server-docker"
+
+$result = curl.exe --silent --show-error --ssl-no-revoke --cacert .\ca.crt `
+  -u "elastic:$env:ELASTIC_PASSWORD" `
+  -X POST `
+  "https://localhost:9200/_security/service/elastic/fleet-server/credential/token/$tokenName" |
+  ConvertFrom-Json
+
+$newToken = $result.token.value
+```
+```
+curl.exe --ssl-no-revoke --cacert .\ca.crt `
+  -H "Authorization: Bearer $env:FLEET_SERVER_SERVICE_TOKEN" `
+  "https://localhost:9200/_security/_authenticate"
+```
+```
+docker compose up -d --no-deps --force-recreate fleet-server
+```
+```
+docker exec fleet-server elastic-agent status
+```
+```
+curl.exe --ssl-no-revoke --cacert .\ca.crt -i https://localhost:8220/api/status
+```
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Elastic-Api-Version: 2023-06-01
+X-Request-Id: adeeaa10-f7ac-454f-8461-5c44b19f656c
+Date: Mon, 16 Nov 2026 04:27:23 GMT
+Content-Length: 42
+
+{"name":"fleet-server","status":"HEALTHY"}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
